@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FCTS — Failure-Guided Curriculum Tree Search Over Generated Terrain for Legged Parkour</title>
+<meta name="description" content="FCTS uses localized traversal failures to generate the terrain a quadruped policy trains on next, and Monte Carlo tree search to explore alternative curriculum trajectories.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230E9F6E'/></svg>">
+<style>
+@font-face{font-family:'Raleway';src:url('assets/font/Raleway.ttf') format('truetype');font-weight:100 900;font-display:swap}
+
+:root{
+  --paper:#FFFFFF; --wash:#F1F3F6; --ink:#101418; --slate:#566072; --mute:#8A93A2; --rule:#DCE1E8;
+  --fcts:#0E9F6E; --ep:#2E6FB7; --eur:#B07C10; --fail:#E11D2E;
+  --relief:linear-gradient(90deg,#3B2A7A,#2E6FB7 34%,#35B79A 67%,#E2B24A);
+  --sans:'Raleway',system-ui,sans-serif;
+  --serif:'Times New Roman',Times,'Liberation Serif',serif;
+  --pad:clamp(20px,5vw,64px); --maxw:1180px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:19px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0)}
+img,video{max-width:100%;display:block}
+a{color:var(--ink);text-underline-offset:3px;text-decoration-thickness:1px}
+h1,h2,h3,.sans{font-family:var(--sans)}
+:focus-visible{outline:2px solid var(--fcts);outline-offset:3px}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
+section{padding:clamp(56px,7vw,104px) 0;border-top:1px solid var(--rule)}
+section:first-of-type{border-top:0}
+h2{font-size:clamp(30px,3.4vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:0 0 10px}
+.lede{font-family:var(--serif);color:var(--slate);max-width:64ch;margin:0 0 34px;font-size:20px}
+p{max-width:70ch}
+
+/* ---------- hero ---------- */
+.hero{position:relative;background:#06070A;color:#fff;border-top:0;padding:0;overflow:hidden}
+.hero video{width:100%;height:auto;object-fit:cover;opacity:.92}
+.hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,7,10,.72) 0%,rgba(6,7,10,.18) 34%,rgba(6,7,10,.55) 72%,rgba(6,7,10,.94) 100%)}
+.hero .inner{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;
+  padding:clamp(20px,3.4vw,44px) var(--pad) clamp(22px,3vw,40px)}
+.venue{font-family:var(--sans);font-size:14px;font-weight:600;color:#C9D2DE}
+.hero h1{font-family:var(--sans);font-weight:800;letter-spacing:-.035em;line-height:.94;
+  font-size:clamp(34px,7.4vw,92px);margin:0 0 .3em;max-width:16ch}
+.hero .sub{font-family:var(--serif);font-size:clamp(16px,1.5vw,23px);color:#DCE2EA;max-width:62ch;margin:0 0 22px}
+.authors{font-family:var(--sans);font-size:15px;color:#C9D2DE;margin:0 0 18px}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font-family:var(--sans);font-size:15px;font-weight:600;padding:11px 20px;border-radius:2px;
+  border:1px solid rgba(255,255,255,.34);color:#fff;text-decoration:none;background:rgba(255,255,255,.07)}
+.btn:hover{background:rgba(255,255,255,.16)}
+.btn[aria-disabled=true]{opacity:.42;pointer-events:none}
+.btn.solid{background:var(--fcts);border-color:var(--fcts)}
+.scalebar{height:3px;background:var(--relief);width:100%}
+
+/* ---------- abstract ---------- */
+.abstract{font-size:21px;line-height:1.72;max-width:72ch}
+.abstract .first::first-letter{font-family:var(--sans);font-weight:800;font-size:3.1em;line-height:.82;
+  float:left;padding:.06em .1em 0 0;color:var(--ink)}
+
+/* ---------- figure-2 walkthrough ---------- */
+.walk{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:start}
+.stage{position:relative;aspect-ratio:3/2;overflow:hidden;background:var(--paper);border:1px solid var(--rule)}
+.stage .pan{position:absolute;left:0;top:0;width:100%;transform-origin:0 0;
+  transition:transform .85s cubic-bezier(.65,0,.2,1);will-change:transform}
+.stage .pan img{width:100%;height:auto;display:block}
+.veil{position:absolute;background:#fff;opacity:.9;transition:opacity .6s ease;pointer-events:none}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{border-top:1px solid var(--rule)}
+.steps li:last-child{border-bottom:1px solid var(--rule)}
+.steps button{all:unset;display:grid;grid-template-columns:30px 1fr;gap:12px;width:100%;padding:13px 4px;cursor:pointer}
+.steps .n{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--mute);padding-top:4px}
+.steps .t{font-family:var(--sans);font-size:17px;font-weight:600}
+.steps .d{font-family:var(--serif);font-size:16px;color:var(--slate);line-height:1.5;display:none;margin-top:5px}
+.steps li[aria-current=true] .n{color:var(--ink)}
+.steps li[aria-current=true] .d{display:block}
+.steps li[aria-current=true]{box-shadow:inset 3px 0 0 var(--stepcol,var(--fcts))}
+.steps li[aria-current=true] button{padding-left:14px}
+.eqn{font-family:var(--serif);font-style:italic;background:var(--wash);padding:2px 6px;white-space:nowrap}
+
+/* ---------- branch strip ---------- */
+.branch{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:8px}
+.branch figure{margin:0}
+.branch .im{background:var(--wash);border:1px solid var(--rule);aspect-ratio:16/9;display:grid;place-items:center;padding:8px}
+.branch img{max-height:100%;width:auto}
+.branch figcaption{font-family:var(--sans);font-size:14px;font-weight:600;margin-top:9px;line-height:1.3}
+.branch .idx{font-family:var(--sans);font-size:12px;color:var(--mute);display:block;font-weight:500}
+
+/* ---------- case comparison ---------- */
+.case{margin-top:40px}
+.case h3{font-family:var(--sans);font-size:22px;font-weight:650;margin:0 0 4px;letter-spacing:-.01em}
+.case p.obs{color:var(--slate);margin:0 0 16px;max-width:82ch;font-size:18px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cell{position:relative}
+.cell video{width:100%;background:#0B0E13;aspect-ratio:532/298;object-fit:cover}
+.cell.win video{outline:2px solid var(--fcts);outline-offset:-2px}
+.cap{display:flex;align-items:center;gap:8px;margin-top:8px;font-family:var(--sans);font-size:15px;font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.state{margin-left:auto;font-weight:500}
+.cell .mark{position:absolute;width:26px;height:26px;border:2px solid var(--fail);border-radius:50%;
+  transform:translate(-50%,-50%);opacity:0;transition:opacity .3s}
+.cell .mark::after{content:"";position:absolute;inset:8px;background:var(--fail);border-radius:50%}
+.cell[data-failed=true] .mark{opacity:1}
+.cell[data-failed=true] video{filter:saturate(.12) brightness(.72)}
+.controls{display:flex;align-items:center;gap:14px;margin-top:14px}
+.ctl{all:unset;font-family:var(--sans);font-size:14px;font-weight:600;padding:8px 16px;border:1px solid var(--rule);cursor:pointer}
+.ctl:hover{background:var(--wash)}
+.track{flex:1;height:3px;background:var(--rule);position:relative}
+.track .fill{position:absolute;inset:0;width:0;background:var(--ink)}
+.time{font-family:var(--sans);font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
+
+.sub-h{font-family:var(--sans);font-size:19px;font-weight:650;margin:34px 0 2px;letter-spacing:-.01em}
+.sub-h:first-of-type{margin-top:0}
+.sub-p{color:var(--slate);font-size:17px;margin:0 0 14px}
+/* ---------- video grids ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+figure.clip{margin:0}
+figure.clip video{width:100%;background:#0B0E13;aspect-ratio:16/9;object-fit:cover}
+figure.clip figcaption{font-family:var(--sans);font-size:15px;font-weight:600;margin-top:9px}
+figure.clip .sub{font-family:var(--serif);font-size:16px;color:var(--slate);font-weight:400;display:block;margin-top:2px}
+.tag{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--fail);border:1px solid currentColor;padding:1px 6px;margin-left:8px;vertical-align:2px}
+
+/* ---------- results ---------- */
+table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:15px}
+caption{text-align:left;font-family:var(--serif);color:var(--slate);font-size:17px;padding-bottom:12px;max-width:80ch}
+th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+thead th{font-size:13px;font-weight:600;color:var(--slate);border-bottom:1px solid var(--ink)}
+tbody tr.ours{font-weight:700;background:rgba(14,159,110,.07)}
+tbody tr.tierstart td{border-top:1px solid var(--rule)}
+td.bar{width:34%;padding-right:0}
+.b{height:11px;background:var(--mute);display:block}
+tr.ours .b{background:var(--fcts)}
+tr[data-m=ep] .b{background:var(--ep)} tr[data-m=eur] .b{background:var(--eur)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- sites ---------- */
+.sites{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:end}
+.sites img{background:var(--wash);padding:10px;border:1px solid var(--rule)}
+.sitecap{font-family:var(--sans);font-size:16px;font-weight:600;margin-top:10px}
+.sitecap span{display:block;font-family:var(--serif);font-weight:400;color:var(--slate);font-size:16px}
+
+/* ---------- bibtex / footer ---------- */
+pre{background:var(--wash);border:1px solid var(--rule);padding:18px;overflow:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6}
+footer{padding:44px 0 72px;color:var(--mute);font-family:var(--sans);font-size:14px;border-top:1px solid var(--rule)}
+
+@media (max-width:820px){
+  .hero{display:flex;flex-direction:column}
+  .hero video{aspect-ratio:16/9;object-fit:cover}
+  .hero .scrim{display:none}
+  .hero .inner{position:static;padding:22px var(--pad) 30px;gap:14px;background:#06070A}
+  .hero h1{font-size:clamp(30px,8.6vw,46px);max-width:none}
+  .venue{margin-bottom:2px}
+  .btn{flex:1 1 auto;text-align:center}
+}
+@media (max-width:980px){
+  .walk{grid-template-columns:1fr}
+  .grid2,.grid3,.sites{grid-template-columns:1fr}
+  .branch{grid-template-columns:repeat(2,1fr)}
+  .trio{grid-template-columns:1fr}
+  body{font-size:17px}
+  td.bar{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <video src="assets/vid/teaser.mp4" poster="assets/img/teaser.jpg" autoplay muted loop playsinline></video>
+  <div class="scrim"></div>
+  <div class="inner">
+    <div class="venue">Preprint</div>
+    <div>
+      <h1>Failure-Guided Curriculum Tree Search</h1>
+      <p class="sub">Localized traversal failures generate the terrain a quadruped policy trains on next, and Monte Carlo tree search spends a fixed budget across competing curriculum trajectories.</p>
+      <p class="authors" id="authors">Author list to be added</p>
+      <div class="btns">
+        <a class="btn solid" href="#" aria-disabled="true" id="link-pdf">Read the paper</a>
+        <a class="btn" href="#video" id="link-video">Watch the video</a>
+        <a class="btn" href="#method">See how it works</a>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="scalebar"></div>
+
+<!-- ============ ABSTRACT ============ -->
+<section id="abstract"><div class="wrap">
+  <h2>Abstract</h2>
+  <div class="abstract">
+    <p class="first">Quadruped parkour policies handle canonical obstacles well, but their curricula miss the irregular, compound geometry of industrial and disaster-response sites. Even training directly on reconstructed geometry from the target site does not reliably yield policies that traverse it.</p>
+    <p>FCTS uses localized traversal failures to generate the terrain a policy should train on next. Each failure's location, termination mode, robot state and surrounding geometry condition that generation, and Monte Carlo Tree Search explores alternative curriculum trajectories under a fixed budget.</p>
+    <p>On terrains built from scanned construction sites, FCTS raises success from 28.4% to 85.8% on a medium course and from 14.9% to 44.7% on a hard course, and transfers to a physical quadruped.</p>
+  </div>
+</div></section>
+
+<!-- ============ METHOD ============ -->
+<section id="method"><div class="wrap">
+  <h2>One expansion, step by step</h2>
+  <p class="lede">Validation failures drive terrain generation; parallel tree search explores alternative improvement trajectories. Step through the loop, or let it run.</p>
+  <div class="walk">
+    <div>
+      <div class="stage" id="stage">
+        <div class="pan" id="pan">
+          <img id="figimg" src="assets/img/fig2.jpg" alt="The FCTS pipeline: validation traversal, failure feedback, failure-conditioned curriculum generation, rehearsal terrains, RL policy training, and the updated policy checkpoint.">
+          <div class="veil" id="vT"></div><div class="veil" id="vB"></div>
+          <div class="veil" id="vL"></div><div class="veil" id="vR"></div>
+        </div>
+      </div>
+      <div class="controls" style="margin-top:12px">
+        <button class="ctl" id="walkPlay">Play the loop</button>
+        <span class="time" id="walkPos" style="text-align:left">Step 1 of 7</span>
+      </div>
+    </div>
+    <ol class="steps" id="steps"></ol>
+  </div>
+</div></section>
+
+<!-- ============ TREE ============ -->
+<section id="tree"><div class="wrap">
+  <h2>The branch the search kept</h2>
+  <p class="lede">Checkpoints are nodes, edges are full training runs. PUCT balances exploitation against exploration, values back up with a maximum, and the winning branch follows the highest backed-up <em>Q</em> from the root. Parallel search completes 25 expansions in 24 hours, 5.3× the sequential rate.</p>
+  <div class="branch" id="branch"></div>
+</div></section>
+
+<!-- ============ SITES ============ -->
+<section id="sites"><div class="wrap">
+  <h2>The evaluation environments</h2>
+  <p class="lede">Both environments are rebuilt from scanned geometry and held out from curriculum generation and training. Routes are fixed before evaluation and stratified by local relief, the height variation inside the robot's 0.4 m footprint.</p>
+  <div class="sites">
+    <figure style="margin:0"><img src="assets/img/site_debris_scan.png" alt="Debris site with eleven coloured evaluation routes.">
+      <figcaption class="sitecap">Debris site<span>11 routes, Easy through V-Hard. Mean relief 0.14 m to 0.32 m; P95 relief reaches 0.63 m.</span></figcaption></figure>
+    <figure style="margin:0"><img src="assets/img/site_beam_scan.png" alt="Exposed Beam site with two evaluation routes across steel beams.">
+      <figcaption class="sitecap">Exposed Beam site<span>Large gaps, narrow structural members and disconnected regions, where relief alone does not measure difficulty.</span></figcaption></figure>
+  </div>
+</div></section>
+
+<!-- ============ CASES ============ -->
+<section id="cases"><div class="wrap">
+  <h2>Where the baselines stop</h2>
+  <p class="lede">Three regions of the Debris site. All policies start from the same checkpoint on the same route; players are synchronized, and each baseline freezes where its robot fails.</p>
+  <div id="caseHost"></div>
+</div></section>
+
+<!-- ============ AFTER SEARCH ============ -->
+<section id="policy"><div class="wrap">
+  <h2>What the final policy does</h2>
+  <p class="lede">Uncut follow-cam runs once the search has finished.</p>
+
+  <h3 class="sub-h">Validation terrains</h3>
+  <p class="sub-p">The fixed set every checkpoint is scored on during the search.</p>
+  <div class="grid2">
+    <figure class="clip"><video src="assets/vid/val_cantilever.mp4" poster="assets/img/val_cantilever.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Cantilever</figcaption></figure>
+    <figure class="clip"><video src="assets/vid/val_staircase.mp4" poster="assets/img/val_staircase.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Hanging staircase</figcaption></figure>
+  </div>
+
+  <h3 class="sub-h">Evaluation sites</h3>
+  <p class="sub-p">Held-out reconstructed geometry, never used to generate curricula or train.</p>
+  <div class="grid3">
+    <figure class="clip"><video src="assets/vid/site_debris.mp4" poster="assets/img/site_debris.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Debris site<span class="sub">Full route</span></figcaption></figure>
+    <figure class="clip"><video src="assets/vid/site_beam.mp4" poster="assets/img/site_beam.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Exposed ridge<span class="sub">Narrow supports and drops</span></figcaption></figure>
+    <figure class="clip"><video src="assets/vid/site_vhard.mp4" poster="assets/img/site_vhard.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>V-Hard course<span class="tag">V-Hard</span><span class="sub">Highest relief tier</span></figcaption></figure>
+  </div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <h2>Results</h2>
+  <table id="t2">
+    <caption>Success rate on relief-stratified routes in the Debris site. Two routes per difficulty tier, each evaluated over two independent seeds with 256 trials per seed. Higher is better.</caption>
+    <thead><tr><th>Tier</th><th>Method</th><th>Success (%)</th><th>Progress IQM</th><th>Waypoints (%)</th><th class="bar"></th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div></section>
+
+<!-- ============ HARDWARE ============ -->
+<section id="hardware"><div class="wrap">
+  <h2>On hardware</h2>
+  <p class="lede">The policy selected from the search portfolio, deployed without retuning. Control runs at 50 Hz on an onboard Jetson AGX Orin, using depth and proprioception.</p>
+  <div class="grid3">
+    <figure class="clip"><video src="assets/vid/hw_box.mp4" poster="assets/img/hw_box.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Box climb and drop</figcaption></figure>
+    <figure class="clip"><video src="assets/vid/hw_stairs.mp4" poster="assets/img/hw_stairs.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Pallet, elevated block and stair descent</figcaption></figure>
+    <figure class="clip"><video src="assets/vid/hw_bricks.mp4" poster="assets/img/hw_bricks.jpg" muted loop playsinline controls preload="none"></video>
+      <figcaption>Scattered bricks and raised platforms</figcaption></figure>
+  </div>
+</div></section>
+
+<!-- ============ VIDEO ============ -->
+<section id="video"><div class="wrap">
+  <h2>Supplementary video</h2>
+  <p class="lede">Two minutes fifty-four, covering the method, the search, the results and the hardware.</p>
+  <video src="assets/vid/full.mp4" poster="assets/img/full.jpg" controls playsinline preload="none" style="width:100%;background:#06070A"></video>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <h2>Cite</h2>
+  <pre id="bib">@article{fcts2026,
+  title   = {FCTS: Failure-Guided Curriculum Tree Search Over Generated Terrain for Legged Parkour},
+  author  = {TBD},
+  year    = {2026}
+}</pre>
+</div></section>
+
+<footer><div class="wrap">FCTS project page. Videos are unedited apart from trimming; simulation comparisons share a checkpoint, route and command.</div></footer>
+
+<script>
+/* ---------------- Figure 2 walkthrough ---------------- */
+/* Boxes are fractions of the figure, measured from the source PDF. */
+const STEPS=[
+ {n:'Validate', c:'#0F77B5', box:[.000,.000,.250,.712],
+  d:'One fixed yardstick, held constant for the whole run: 512 parallel validation trials per checkpoint, on terrain generated from standard parkour taxonomies.'},
+ {n:'Diagnose', c:'#D9481F', box:[.266,.000,.642,.700],
+  d:'The failure at the modal traversal progress &mdash; where the policy characteristically stops &mdash; with its location, termination cause, base orientation, an 8&nbsp;m local heightmap and the terrain centerline profile.'},
+ {n:'Search and generate', c:'#EA8A13', box:[.660,.000,1.000,.697],
+  d:'Tree search picks the checkpoint to expand. Conditioned on the failure and the branch history, a multimodal LLM writes three terrains: targeted, generalized, and combined.'},
+ {n:'Rehearse', c:'#2E8B57', box:[.732,.676,1.000,1.000],
+  d:'Branch-history rehearsal. Terrain from a completed expansion is retained by the parent&ndash;child change in search value, <span class="eqn">&Delta;Q = Q(child) &minus; Q(parent)</span>, and kept when <span class="eqn">&Delta;Q &ge; &minus;&tau;</span>.'},
+ {n:'Train', c:'#8065FF', box:[.150,.722,.745,1.000],
+  d:'Each run splits its terrain slots half to the new curriculum and half to rehearsal. FCTS changes what the learner trains on, not how it trains.'},
+ {n:'New node', c:'#0F77B5', box:[.000,.664,.238,1.000],
+  d:'The resulting checkpoint becomes a new child node. Under a fixed wall-clock budget the search returns a portfolio of policy checkpoints.'},
+ {n:'The whole loop', c:'#101418', box:[.000,.000,1.000,1.000],
+  d:'Validation failures guide terrain generation, while parallel MCTS explores alternative policy-improvement trajectories.'}
+];
+const stage=document.getElementById('stage'), pan=document.getElementById('pan'),
+      veils={T:vT,B:vB,L:vL,R:vR}, stepsEl=document.getElementById('steps'), posEl=document.getElementById('walkPos');
+let cur=0, timer=null;
+STEPS.forEach((s,i)=>{
+  const li=document.createElement('li');
+  li.innerHTML=`<button type="button"><span class="n">${i===STEPS.length-1?'&mdash;':i+1}</span><span><span class="t">${s.n}</span><span class="d">${s.d}</span></span></button>`;
+  li.querySelector('button').addEventListener('click',()=>{stop();go(i)});
+  stepsEl.appendChild(li);
+});
+function go(i){
+  cur=i; const s=STEPS[i], [x0,y0,x1,y1]=s.box;
+  const m=(i===STEPS.length-1)?0.012:0.028;
+  const bx0=Math.max(0,x0-m), by0=Math.max(0,y0-m), bx1=Math.min(1,x1+m), by1=Math.min(1,y1+m);
+  const Ws=stage.clientWidth, Hs=stage.clientHeight, W=pan.clientWidth, Hi=document.getElementById('figimg').clientHeight||W/1.854;
+  const k=Math.min(Ws/((bx1-bx0)*W), Hs/((by1-by0)*Hi));
+  const tx=Ws/2/k-((bx0+bx1)/2)*W, ty=Hs/2/k-((by0+by1)/2)*Hi;
+  pan.style.transform=`scale(${k}) translate(${tx}px, ${ty}px)`;
+  const pc=v=>v*100+'%', last=(i===STEPS.length-1), o=last?0:1;
+  veils.T.style.cssText=`left:0;top:0;width:100%;height:${pc(y0)};opacity:${o}`;
+  veils.B.style.cssText=`left:0;top:${pc(y1)};width:100%;height:${pc(1-y1)};opacity:${o}`;
+  veils.L.style.cssText=`left:0;top:${pc(y0)};width:${pc(x0)};height:${pc(y1-y0)};opacity:${o}`;
+  veils.R.style.cssText=`left:${pc(x1)};top:${pc(y0)};width:${pc(1-x1)};height:${pc(y1-y0)};opacity:${o}`;
+  [...stepsEl.children].forEach((li,j)=>{li.setAttribute('aria-current',j===i);li.style.setProperty('--stepcol',STEPS[j].c)});
+  posEl.textContent=`Step ${i+1} of ${STEPS.length}`;
+}
+const playBtn=document.getElementById('walkPlay');
+function stop(){if(timer){clearInterval(timer);timer=null;playBtn.textContent='Play the loop'}}
+playBtn.addEventListener('click',()=>{
+  if(timer){stop();return}
+  playBtn.textContent='Pause';
+  go((cur+1)%STEPS.length);
+  timer=setInterval(()=>go((cur+1)%STEPS.length),3400);
+});
+const fi=document.getElementById('figimg');
+if(fi.complete) go(0); else fi.addEventListener('load',()=>go(0));
+go(0); addEventListener('resize',()=>go(cur));
+
+/* ---------------- winning branch ---------------- */
+const BRANCH=['Undulating Rubble','Ramped Pillars','Raised Blocks &amp; Voids','Rubble &amp; Stepping Stones','Composite Terrain'];
+document.getElementById('branch').innerHTML=BRANCH.map((n,i)=>
+ `<figure><div class="im"><img src="assets/img/br${i+1}.png" alt="${n.replace('&amp;','and')} terrain"></div>
+  <figcaption><span class="idx">Expansion ${i+1}</span>${n}</figcaption></figure>`).join('');
+
+/* ---------------- synchronized case players ---------------- */
+/* Failure frames measured from the clips (30 fps). */
+const CASES=[
+ {t:'A 90&deg; turn on a rubble field with discontinuous gaps',
+  o:'The turn coincides with uneven rubble and gaps in the traversable surface. Both baselines terminate here; FCTS completes the turn after the branch introduced strongly varying surface geometry.',
+  len:8.8, f:{ep:3.97,eur:2.73}, mark:{ep:[50,60],eur:[50,57]}},
+ {t:'An inclined rubble field with rounded boulders and scattered footholds',
+  o:'Both baseline policies develop large lateral roll and then trip or fall. Ramped Pillars had added sustained slope and non-uniform support, and FCTS stays upright across the same incline.',
+  len:7.4, f:{ep:3.07,eur:5.00}, mark:{ep:[50,58],eur:[52,56]}},
+ {t:'A broken hurdle ridge with stepped gaps',
+  o:'The baselines fail at the repeated gap transitions that Raised Blocks &amp; Voids had put into the curriculum. FCTS completes several successive height-and-gap transitions.',
+  len:11.5, f:{ep:6.00,eur:3.50}, mark:{ep:[49,60],eur:[48,62]}}];
+const MET=[['ep','Extreme Parkour','var(--ep)'],['eur','Eurekaverse','var(--eur)'],['fcts','FCTS','var(--fcts)']];
+const host=document.getElementById('caseHost');
+CASES.forEach((c,ci)=>{
+  const d=document.createElement('div'); d.className='case';
+  d.innerHTML=`<h3>${c.t}</h3><p class="obs">${c.o}</p>
+   <div class="trio">${MET.map(([m,nm,col])=>`
+     <div class="cell ${m==='fcts'?'win':''}" data-m="${m}">
+       <video src="assets/vid/c${ci+1}_${m}.mp4" poster="assets/img/c${ci+1}_${m}.jpg" muted playsinline preload="metadata"></video>
+       ${m!=='fcts'?`<div class="mark" style="left:${c.mark[m][0]}%;top:${c.mark[m][1]}%"></div>`:''}
+       <div class="cap"><span class="dot" style="background:${col}"></span>${nm}
+         <span class="state" data-state style="color:${m==='fcts'?'var(--fcts)':'var(--mute)'}">${m==='fcts'?'completes':'running'}</span></div>
+     </div>`).join('')}</div>
+   <div class="controls"><button class="ctl" data-play>Play together</button>
+     <button class="ctl" data-reset>Restart</button>
+     <div class="track"><div class="fill"></div></div><div class="time">0.0 / ${c.len.toFixed(1)} s</div></div>`;
+  host.appendChild(d);
+  const vids=[...d.querySelectorAll('video')], fill=d.querySelector('.fill'), time=d.querySelector('.time');
+  const cells=[...d.querySelectorAll('.cell')];
+  let t=0, raf=null, playing=false, last=0;
+  const setT=(tt)=>{
+    t=Math.max(0,Math.min(c.len,tt));
+    cells.forEach(cell=>{
+      const m=cell.dataset.m, v=cell.querySelector('video'), st=cell.querySelector('[data-state]');
+      const fail=c.f[m];
+      const target=(fail!==undefined && t>=fail)?fail:t;
+      if(Math.abs(v.currentTime-target)>0.06) { try{v.currentTime=target}catch(e){} }
+      if(fail!==undefined){
+        const dead=t>=fail; cell.dataset.failed=dead;
+        st.textContent=dead?'fails':'running'; st.style.color=dead?'var(--fail)':'var(--mute)';
+      }
+    });
+    fill.style.width=(100*t/c.len)+'%';
+    time.textContent=t.toFixed(1)+' / '+c.len.toFixed(1)+' s';
+  };
+  const btn=d.querySelector('[data-play]');
+  const tick=(ts)=>{ if(!playing) return;
+    const dt=(ts-last)/1000; last=ts;
+    if(t>=c.len){ pause(); return; }
+    setT(t+dt); raf=requestAnimationFrame(tick); };
+  function play(){ if(t>=c.len) setT(0); playing=true; btn.textContent='Pause'; last=performance.now(); raf=requestAnimationFrame(tick); }
+  function pause(){ playing=false; btn.textContent='Play together'; if(raf) cancelAnimationFrame(raf); }
+  btn.addEventListener('click',()=>playing?pause():play());
+  d.querySelector('[data-reset]').addEventListener('click',()=>{pause();setT(0)});
+  d.querySelector('.track').addEventListener('click',e=>{
+    const r=e.currentTarget.getBoundingClientRect(); pause(); setT((e.clientX-r.left)/r.width*c.len);});
+  let started=false;
+  new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting && !started && !matchMedia('(prefers-reduced-motion: reduce)').matches){started=true;play();}
+    else if(!e.isIntersecting && playing) pause();
+  }),{threshold:.45}).observe(d);
+  Promise.all(vids.map(v=>new Promise(r=>v.readyState>0?r():v.addEventListener('loadedmetadata',r,{once:true})))).then(()=>setT(0));
+});
+
+/* ---------------- results table ---------------- */
+const T2=[['Easy',[['Extreme Parkour','ep',29.8,0.77,74.1],['Eurekaverse','eur',29.4,0.45,26.8],['Modified Eurekaverse','mod',31.5,0.61,55.4],['FCTS','ours',84.0,1.00,100.0]]],
+          ['Mid',[['Extreme Parkour','ep',23.9,0.63,53.2],['Eurekaverse','eur',28.4,0.70,67.5],['Modified Eurekaverse','mod',28.4,0.70,60.3],['FCTS','ours',85.8,1.00,100.0]]],
+          ['Hard',[['Extreme Parkour','ep',11.8,0.41,36.6],['Eurekaverse','eur',0.8,0.34,31.4],['Modified Eurekaverse','mod',14.9,0.42,39.5],['FCTS','ours',44.7,0.82,79.4]]],
+          ['V-Hard',[['Extreme Parkour','ep',0.6,0.34,26.0],['Eurekaverse','eur',0.2,0.44,36.5],['Modified Eurekaverse','mod',0.8,0.39,25.0],['FCTS','ours',11.4,0.71,64.6]]]];
+document.querySelector('#t2 tbody').innerHTML=T2.map(([tier,rows])=>rows.map((r,i)=>{
+  const [nm,m,s,iqm,wp]=r;
+  return `<tr class="${m==='ours'?'ours':''} ${i===0?'tierstart':''}" data-m="${m}">
+    <td>${i===0?tier:''}</td><td>${nm}${m==='ours'?' (ours)':''}</td>
+    <td class="num">${s.toFixed(1)}</td><td class="num">${iqm.toFixed(2)}</td><td class="num">${wp.toFixed(1)}</td>
+    <td class="bar"><span class="b" style="width:${s}%"></span></td></tr>`;}).join('')).join('');
+</script>
+</body>
+</html>
