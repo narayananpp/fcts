@@ -10,8 +10,9 @@
 @font-face{font-family:'Raleway';src:url('assets/font/Raleway.ttf') format('truetype');font-weight:100 900;font-display:swap}
 
 :root{
-  --paper:#FFFFFF; --wash:#F1F3F6; --ink:#101418; --slate:#566072; --mute:#8A93A2; --rule:#DCE1E8;
-  --fcts:#0E9F6E; --ep:#2E6FB7; --eur:#B07C10; --fail:#E11D2E;
+  --paper:#0B0D11; --wash:#151A21; --ink:#ECEFF3; --slate:#A2ABBA; --mute:#6E7888; --rule:#242A33;
+  --sheet:#FFFFFF;
+  --fcts:#3EE0A0; --ep:#6FA8DC; --eur:#E0B13A; --fail:#FF5A5A;
   --relief:linear-gradient(90deg,#3B2A7A,#2E6FB7 34%,#35B79A 67%,#E2B24A);
   --sans:'Raleway',system-ui,sans-serif;
   --serif:'Times New Roman',Times,'Liberation Serif',serif;
@@ -53,14 +54,16 @@ p{max-width:70ch}
 .btn.solid{background:var(--fcts);border-color:var(--fcts)}
 .scalebar{height:3px;background:var(--relief);width:100%}
 
+.tldr{font-family:var(--serif);font-size:20px;line-height:1.62;color:var(--slate);max-width:80ch;margin:20px 0 0}
+.tldr strong{color:var(--ink);font-weight:400;box-shadow:inset 0 -2px 0 var(--fcts)}
 /* ---------- abstract ---------- */
-.abstract{font-size:21px;line-height:1.72;max-width:72ch}
+.abstract{font-size:19px;line-height:1.7;max-width:74ch;color:var(--slate)}
 .abstract .first::first-letter{font-family:var(--sans);font-weight:800;font-size:3.1em;line-height:.82;
   float:left;padding:.06em .1em 0 0;color:var(--ink)}
 
 /* ---------- figure-2 walkthrough ---------- */
 .walk{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:start}
-.stage{position:relative;aspect-ratio:3/2;overflow:hidden;background:var(--paper);border:1px solid var(--rule)}
+.stage{position:relative;aspect-ratio:3/2;overflow:hidden;background:var(--sheet);border:1px solid var(--rule)}
 .stage .pan{position:absolute;left:0;top:0;width:100%;transform-origin:0 0;
   transition:transform .85s cubic-bezier(.65,0,.2,1);will-change:transform}
 .stage .pan img{width:100%;height:auto;display:block}
@@ -81,7 +84,7 @@ p{max-width:70ch}
 /* ---------- branch strip ---------- */
 .branch{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:8px}
 .branch figure{margin:0}
-.branch .im{background:var(--wash);border:1px solid var(--rule);aspect-ratio:16/9;display:grid;place-items:center;padding:8px}
+.branch .im{background:#F2F4F7;border:1px solid var(--rule);aspect-ratio:16/9;display:grid;place-items:center;padding:8px}
 .branch img{max-height:100%;width:auto}
 .branch figcaption{font-family:var(--sans);font-size:14px;font-weight:600;margin-top:9px;line-height:1.3}
 .branch .idx{font-family:var(--sans);font-size:12px;color:var(--mute);display:block;font-weight:500}
@@ -92,7 +95,7 @@ p{max-width:70ch}
 .case p.obs{color:var(--slate);margin:0 0 16px;max-width:82ch;font-size:18px}
 .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .cell{position:relative}
-.cell video{width:100%;background:#0B0E13;aspect-ratio:532/298;object-fit:cover}
+.cell video{width:100%;background:#05070A;aspect-ratio:532/298;object-fit:cover}
 .cell.win video{outline:2px solid var(--fcts);outline-offset:-2px}
 .cap{display:flex;align-items:center;gap:8px;margin-top:8px;font-family:var(--sans);font-size:15px;font-weight:600}
 .dot{width:9px;height:9px;border-radius:50%;flex:none}
@@ -103,10 +106,10 @@ p{max-width:70ch}
 .cell[data-failed=true] .mark{opacity:1}
 .cell[data-failed=true] video{filter:saturate(.12) brightness(.72)}
 .controls{display:flex;align-items:center;gap:14px;margin-top:14px}
-.ctl{all:unset;font-family:var(--sans);font-size:14px;font-weight:600;padding:8px 16px;border:1px solid var(--rule);cursor:pointer}
+.ctl{all:unset;color:var(--ink);font-family:var(--sans);font-size:14px;font-weight:600;padding:8px 16px;border:1px solid var(--rule);cursor:pointer}
 .ctl:hover{background:var(--wash)}
 .track{flex:1;height:3px;background:var(--rule);position:relative}
-.track .fill{position:absolute;inset:0;width:0;background:var(--ink)}
+.track .fill{position:absolute;inset:0;width:0;background:var(--fcts)}
 .time{font-family:var(--sans);font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
 
 .sub-h{font-family:var(--sans);font-size:19px;font-weight:650;margin:34px 0 2px;letter-spacing:-.01em}
@@ -116,7 +119,7 @@ p{max-width:70ch}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 figure.clip{margin:0}
-figure.clip video{width:100%;background:#0B0E13;aspect-ratio:16/9;object-fit:cover}
+figure.clip video{width:100%;background:#05070A;aspect-ratio:16/9;object-fit:cover}
 figure.clip figcaption{font-family:var(--sans);font-size:15px;font-weight:600;margin-top:9px}
 figure.clip .sub{font-family:var(--serif);font-size:16px;color:var(--slate);font-weight:400;display:block;margin-top:2px}
 .tag{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--fail);border:1px solid currentColor;padding:1px 6px;margin-left:8px;vertical-align:2px}
@@ -127,7 +130,7 @@ caption{text-align:left;font-family:var(--serif);color:var(--slate);font-size:17
 th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
 th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 thead th{font-size:13px;font-weight:600;color:var(--slate);border-bottom:1px solid var(--ink)}
-tbody tr.ours{font-weight:700;background:rgba(14,159,110,.07)}
+tbody tr.ours{font-weight:700;background:rgba(62,224,160,.10)}
 tbody tr.tierstart td{border-top:1px solid var(--rule)}
 td.bar{width:34%;padding-right:0}
 .b{height:11px;background:var(--mute);display:block}
@@ -137,12 +140,12 @@ tr[data-m=ep] .b{background:var(--ep)} tr[data-m=eur] .b{background:var(--eur)}
 
 /* ---------- sites ---------- */
 .sites{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:end}
-.sites img{background:var(--wash);padding:10px;border:1px solid var(--rule)}
+.sites img{padding:4px;filter:brightness(1.07)}
 .sitecap{font-family:var(--sans);font-size:16px;font-weight:600;margin-top:10px}
 .sitecap span{display:block;font-family:var(--serif);font-weight:400;color:var(--slate);font-size:16px}
 
 /* ---------- bibtex / footer ---------- */
-pre{background:var(--wash);border:1px solid var(--rule);padding:18px;overflow:auto;
+pre{background:var(--wash);border:1px solid var(--rule);color:var(--ink);padding:18px;overflow:auto;
   font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6}
 footer{padding:44px 0 72px;color:var(--mute);font-family:var(--sans);font-size:14px;border-top:1px solid var(--rule)}
 
@@ -187,14 +190,12 @@ footer{padding:44px 0 72px;color:var(--mute);font-family:var(--sans);font-size:1
 </header>
 <div class="scalebar"></div>
 
-<!-- ============ ABSTRACT ============ -->
-<section id="abstract"><div class="wrap">
-  <h2>Abstract</h2>
-  <div class="abstract">
-    <p class="first">Quadruped parkour policies handle canonical obstacles well, but their curricula miss the irregular, compound geometry of industrial and disaster-response sites. Even training directly on reconstructed geometry from the target site does not reliably yield policies that traverse it.</p>
-    <p>FCTS uses localized traversal failures to generate the terrain a policy should train on next. Each failure's location, termination mode, robot state and surrounding geometry condition that generation, and Monte Carlo Tree Search explores alternative curriculum trajectories under a fixed budget.</p>
-    <p>On terrains built from scanned construction sites, FCTS raises success from 28.4% to 85.8% on a medium course and from 14.9% to 44.7% on a hard course, and transfers to a physical quadruped.</p>
-  </div>
+<!-- ============ VIDEO ============ -->
+<section id="video"><div class="wrap">
+  <h2>Supplementary video</h2>
+  <p class="lede">The method, the search, the results and the hardware experiments, in two minutes fifty-four.</p>
+  <video src="assets/vid/full.mp4" poster="assets/img/full.jpg" controls playsinline preload="none" style="width:100%;background:#05070A"></video>
+  <p class="tldr">FCTS turns each localized traversal failure into the terrain a policy trains on next, and searches over competing curricula with tree search. On held-out courses rebuilt from scanned sites it raises success from <strong>28.4% to 85.8%</strong> on a medium course and from <strong>14.9% to 44.7%</strong> on a hard one, and transfers to a physical quadruped.</p>
 </div></section>
 
 <!-- ============ METHOD ============ -->
@@ -238,13 +239,6 @@ footer{padding:44px 0 72px;color:var(--mute);font-family:var(--sans);font-size:1
   </div>
 </div></section>
 
-<!-- ============ CASES ============ -->
-<section id="cases"><div class="wrap">
-  <h2>Where the baselines stop</h2>
-  <p class="lede">Three regions of the Debris site. All policies start from the same checkpoint on the same route; players are synchronized, and each baseline freezes where its robot fails.</p>
-  <div id="caseHost"></div>
-</div></section>
-
 <!-- ============ AFTER SEARCH ============ -->
 <section id="policy"><div class="wrap">
   <h2>What the final policy does</h2>
@@ -271,16 +265,6 @@ footer{padding:44px 0 72px;color:var(--mute);font-family:var(--sans);font-size:1
   </div>
 </div></section>
 
-<!-- ============ RESULTS ============ -->
-<section id="results"><div class="wrap">
-  <h2>Results</h2>
-  <table id="t2">
-    <caption>Success rate on relief-stratified routes in the Debris site. Two routes per difficulty tier, each evaluated over two independent seeds with 256 trials per seed. Higher is better.</caption>
-    <thead><tr><th>Tier</th><th>Method</th><th>Success (%)</th><th>Progress IQM</th><th>Waypoints (%)</th><th class="bar"></th></tr></thead>
-    <tbody></tbody>
-  </table>
-</div></section>
-
 <!-- ============ HARDWARE ============ -->
 <section id="hardware"><div class="wrap">
   <h2>On hardware</h2>
@@ -295,11 +279,31 @@ footer{padding:44px 0 72px;color:var(--mute);font-family:var(--sans);font-size:1
   </div>
 </div></section>
 
-<!-- ============ VIDEO ============ -->
-<section id="video"><div class="wrap">
-  <h2>Supplementary video</h2>
-  <p class="lede">Two minutes fifty-four, covering the method, the search, the results and the hardware.</p>
-  <video src="assets/vid/full.mp4" poster="assets/img/full.jpg" controls playsinline preload="none" style="width:100%;background:#06070A"></video>
+<!-- ============ CASES ============ -->
+<section id="cases"><div class="wrap">
+  <h2>Where the baselines stop</h2>
+  <p class="lede">Three regions of the Debris site. All policies start from the same checkpoint on the same route; players are synchronized, and each baseline freezes where its robot fails.</p>
+  <div id="caseHost"></div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <h2>Results</h2>
+  <table id="t2">
+    <caption>Success rate on relief-stratified routes in the Debris site. Two routes per difficulty tier, each evaluated over two independent seeds with 256 trials per seed. Higher is better.</caption>
+    <thead><tr><th>Tier</th><th>Method</th><th>Success (%)</th><th>Progress IQM</th><th>Waypoints (%)</th><th class="bar"></th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div></section>
+
+<!-- ============ ABSTRACT ============ -->
+<section id="abstract"><div class="wrap">
+  <h2>Abstract</h2>
+  <div class="abstract">
+    <p class="first">Quadruped parkour policies handle canonical obstacles well, but their curricula miss the irregular, compound geometry of industrial and disaster-response sites. Even training directly on reconstructed geometry from the target site does not reliably yield policies that traverse it.</p>
+    <p>FCTS uses localized traversal failures to generate the terrain a policy should train on next. Each failure's location, termination mode, robot state and surrounding geometry condition that generation, and Monte Carlo Tree Search explores alternative curriculum trajectories under a fixed budget.</p>
+    <p>On terrains built from scanned construction sites, FCTS raises success from 28.4% to 85.8% on a medium course and from 14.9% to 44.7% on a hard course, and transfers to a physical quadruped.</p>
+  </div>
 </div></section>
 
 <!-- ============ CITE ============ -->
